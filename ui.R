@@ -15,8 +15,8 @@ shinyUI(fluidPage(class="outer",
     tags$script(src="//code.jquery.com/ui/1.10.3/jquery-ui.js")
   ),
   leafletMap("map", width="100%", height="100%",
-    #initialTileLayer = "http://{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-    initialTileLayer = NULL,
+    initialTileLayer = "http://{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+    #initialTileLayer = NULL,
     initialTileLayerAttribution = HTML('Maps by <a href="http://www.mapbox.com/">Mapbox</a>'),
     options=list(
       center = c(37.45, -93.85),

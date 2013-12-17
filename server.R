@@ -3,20 +3,20 @@ library(RColorBrewer)
 library(scales)
 library(lattice)
 
-allzips <- readRDS("data/superzip.rds")
-allzips$latitude <- jitter(allzips$latitude)
-allzips$longitude <- jitter(allzips$longitude)
-allzips$college <- allzips$college * 100
-allzips$zipcode <- formatC(allzips$zipcode, width=5, format="d", flag="0")
-row.names(allzips) <- allzips$zipcode
-
-# Leaflet bindings are a bit slow; for now we'll just sample to compensate
-zipdata <- allzips[sample.int(nrow(allzips), 10000),]
-# By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
-# will be drawn last and thus be easier to see
-zipdata <- zipdata[order(zipdata$centile),]
-
 shinyServer(function(input, output, session) {
+
+  allzips <- readRDS("data/superzip.rds")
+  allzips$latitude <- jitter(allzips$latitude)
+  allzips$longitude <- jitter(allzips$longitude)
+  allzips$college <- allzips$college * 100
+  allzips$zipcode <- formatC(allzips$zipcode, width=5, format="d", flag="0")
+  row.names(allzips) <- allzips$zipcode
+
+  # Leaflet bindings are a bit slow; for now we'll just sample to compensate
+  zipdata <- allzips[sample.int(nrow(allzips), 10000),]
+  # By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
+  # will be drawn last and thus be easier to see
+  zipdata <- zipdata[order(zipdata$centile),]
 
   # Create the map
   map <- createLeafletMap(session, "map")
@@ -45,7 +45,7 @@ shinyServer(function(input, output, session) {
     
     hist(zipsInBounds()$centile,
       breaks = centileBreaks,
-      main = "SuperZIP score",
+      main = "SuperZIP score (visible zips)",
       xlab = "Percentile",
       xlim = range(allzips$centile),
       col = '#00DD00',
@@ -81,13 +81,18 @@ shinyServer(function(input, output, session) {
       colors <- colors[match(zipdata$zipcode, allzips$zipcode)]
       
       map$clearShapes()
-      map$addCircle(
-        zipdata$latitude, zipdata$longitude,
-        (zipdata[[sizeBy]] / max(zipdata[[sizeBy]])) * 30000,
-        zipdata$zipcode,
-        list(stroke=FALSE, fill=TRUE, fillOpacity=0.4),
-        list(color = colors)
-      )
+      chunksize <- 1000
+      for (from in seq.int(1, nrow(zipdata), chunksize)) {
+        to <- from + chunksize
+        zipchunk <- zipdata[from:to,]
+        map$addCircle(
+          zipchunk$latitude, zipchunk$longitude,
+          (zipchunk[[sizeBy]] / max(allzips[[sizeBy]])) * 30000,
+          zipchunk$zipcode,
+          list(stroke=FALSE, fill=TRUE, fillOpacity=0.4),
+          list(color = colors[from:to])
+        )
+      }
     })
   })
 
