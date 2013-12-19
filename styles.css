@@ -6,26 +6,34 @@ html, body, div.outer {
   overflow: hidden;
 }
 
+/* Customize fonts */
+body, label, input, button, select { 
+  font-family: 'Helvetica Neue';
+  font-weight: 200;
+}
+h1, h2, h3, h4 { font-weight: 400; }
+
 #controls {
+  /* Position controls */
   position: absolute;
-  left: auto;
-  right: 20px;
-  top: 20px;
-  bottom: auto;
-  width: 330px;
-  height: auto;
+  top: 20px; left: auto; right: 20px; bottom: auto;
+  width: 330px; height: auto;
+  /* Appearance */
   background-color: white;
   padding: 0 20px 20px 20px;
+  cursor: move;
+  /* Fade out while not hovering */
   opacity: 0.65;
   zoom: 0.9;
   transition: opacity 500ms 1s;
-  cursor: move;
 }
 #controls:hover {
+  /* Fade in while hovering */
   opacity: 0.95;
   transition-delay: 0;
 }
 
+/* Position and style citation */
 #cite {
   position: absolute;
   bottom: 10px;
@@ -33,6 +41,7 @@ html, body, div.outer {
   font-size: 12px;
 }
 
+/* If not using map tiles, show a white background */
 .leaflet-container {
   background-color: white !important;
 }

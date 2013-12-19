@@ -3,20 +3,21 @@ library(RColorBrewer)
 library(scales)
 library(lattice)
 
+allzips <- readRDS("data/superzip.rds")
+allzips$latitude <- jitter(allzips$latitude)
+allzips$longitude <- jitter(allzips$longitude)
+allzips$college <- allzips$college * 100
+allzips$zipcode <- formatC(allzips$zipcode, width=5, format="d", flag="0")
+row.names(allzips) <- allzips$zipcode
+
+# Leaflet bindings are a bit slow; for now we'll just sample to compensate
+set.seed(100)
+zipdata <- allzips[sample.int(nrow(allzips), 10000),]
+# By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
+# will be drawn last and thus be easier to see
+zipdata <- zipdata[order(zipdata$centile),]
+
 shinyServer(function(input, output, session) {
-
-  allzips <- readRDS("data/superzip.rds")
-  allzips$latitude <- jitter(allzips$latitude)
-  allzips$longitude <- jitter(allzips$longitude)
-  allzips$college <- allzips$college * 100
-  allzips$zipcode <- formatC(allzips$zipcode, width=5, format="d", flag="0")
-  row.names(allzips) <- allzips$zipcode
-
-  # Leaflet bindings are a bit slow; for now we'll just sample to compensate
-  zipdata <- allzips[sample.int(nrow(allzips), 10000),]
-  # By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
-  # will be drawn last and thus be easier to see
-  zipdata <- zipdata[order(zipdata$centile),]
 
   # Create the map
   map <- createLeafletMap(session, "map")
@@ -38,8 +39,8 @@ shinyServer(function(input, output, session) {
   # Precalculate the breaks we'll need for the two histograms
   centileBreaks <- hist(plot = FALSE, allzips$centile, breaks = 20)$breaks
 
-  # Simple histogram
-  output$plotCentile <- renderPlot({
+  output$histCentile <- renderPlot({
+    # If no zipcodes are in view, don't plot
     if (nrow(zipsInBounds()) == 0)
       return(NULL)
     
@@ -52,23 +53,19 @@ shinyServer(function(input, output, session) {
       border = 'white')
   })
   
-  output$plotXY <- renderPlot({
+  output$scatterCollegeIncome <- renderPlot({
+    # If no zipcodes are in view, don't plot
     if (nrow(zipsInBounds()) == 0)
       return(NULL)
     
-    # hist(zipsInBounds()$income,
-    #   breaks = incomeBreaks,
-    #   main = "Income level",
-    #   xlab = "Median household income",
-    #   xlim = range(allzips$income),
-    #   col = '#00DD00',
-    #   border = 'white')
-    # abline(v = 53.37156, col = 'red', lty = 5)
     print(xyplot(income ~ college, data = zipsInBounds(), xlim = range(allzips$college), ylim = range(allzips$income)))
   })
   
+  # session$onFlushed is necessary to work around a bug in the Shiny/Leaflet
+  # integration; without it, the addCircle commands arrive in the browser
+  # before the map is created.
   session$onFlushed(once=TRUE, function() {
-    observe({
+    paintObs <- observe({
       colorBy <- input$color
       sizeBy <- input$size
 
@@ -80,10 +77,12 @@ shinyServer(function(input, output, session) {
       colors <- brewer.pal(7, "Spectral")[cut(colorData, 7, labels = FALSE)]
       colors <- colors[match(zipdata$zipcode, allzips$zipcode)]
       
+      # Clear existing circles before drawing
       map$clearShapes()
+      # Draw in batches of 1000; makes the app feel a bit more responsive
       chunksize <- 1000
       for (from in seq.int(1, nrow(zipdata), chunksize)) {
-        to <- from + chunksize
+        to <- min(nrow(zipdata), from + chunksize)
         zipchunk <- zipdata[from:to,]
         map$addCircle(
           zipchunk$latitude, zipchunk$longitude,
@@ -94,10 +93,14 @@ shinyServer(function(input, output, session) {
         )
       }
     })
+    
+    # TIL this is necessary in order to prevent the observer from
+    # attempting to write to the websocket after the session is gone.
+    session$onSessionEnded(paintObs$suspend)
   })
 
   # When map is clicked, show a popup with city info
-  observe({
+  clickObs <- observe({
     map$clearPopups()
     event <- input$map_shape_click
     if (is.null(event))
@@ -111,10 +114,12 @@ shinyServer(function(input, output, session) {
           selectedZip$city.x, selectedZip$state.x, selectedZip$zipcode
         ))), tags$br(),
         sprintf("Median household income: %s", dollar(selectedZip$income * 1000)), tags$br(),
-        sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
+        sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
         sprintf("Adult population: %s", selectedZip$adultpop)
       ))
       map$showPopup(event$lat, event$lng, content, event$id)
     })
   })
+  
+  session$onSessionEnded(clickObs$suspend)
 })
