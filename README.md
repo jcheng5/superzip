@@ -2,7 +2,7 @@
 
 See this demo live [here](http://jcheng.shinyapps.io/superzip/).
 
-To run this app locally:
+This demo app uses [Packrat](http://rstudio.github.io/packrat/). To run this app locally:
 
 ```
 git clone https://github.com/jcheng5/superzip
