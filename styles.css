@@ -8,7 +8,7 @@ html, body, div.outer {
 
 /* Customize fonts */
 body, label, input, button, select { 
-  font-family: 'Helvetica Neue';
+  font-family: 'Helvetica Neue', Helvetica;
   font-weight: 200;
 }
 h1, h2, h3, h4 { font-weight: 400; }
