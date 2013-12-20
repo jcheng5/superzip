@@ -84,12 +84,16 @@ shinyServer(function(input, output, session) {
       for (from in seq.int(1, nrow(zipdata), chunksize)) {
         to <- min(nrow(zipdata), from + chunksize)
         zipchunk <- zipdata[from:to,]
-        map$addCircle(
-          zipchunk$latitude, zipchunk$longitude,
-          (zipchunk[[sizeBy]] / max(allzips[[sizeBy]])) * 30000,
-          zipchunk$zipcode,
-          list(stroke=FALSE, fill=TRUE, fillOpacity=0.4),
-          list(color = colors[from:to])
+        # Bug in Shiny causes this to error out when user closes browser
+        # before we get here
+        try(
+          map$addCircle(
+            zipchunk$latitude, zipchunk$longitude,
+            (zipchunk[[sizeBy]] / max(allzips[[sizeBy]])) * 30000,
+            zipchunk$zipcode,
+            list(stroke=FALSE, fill=TRUE, fillOpacity=0.4),
+            list(color = colors[from:to])
+          )
         )
       }
     })
