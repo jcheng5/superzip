@@ -1,9 +1,15 @@
-/* This gives us full bleed */
-html, body, div.outer {
-  width: 100%;
-  height: 100%;
-  padding: 0;
+input[type="number"] {
+  max-width: 80%;
+}
+
+div.outer {
+  position: fixed;
+  top: 41px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
+  padding: 0;
 }
 
 /* Customize fonts */
@@ -14,10 +20,6 @@ body, label, input, button, select {
 h1, h2, h3, h4 { font-weight: 400; }
 
 #controls {
-  /* Position controls */
-  position: absolute;
-  top: 20px; left: auto; right: 20px; bottom: auto;
-  width: 330px; height: auto;
   /* Appearance */
   background-color: white;
   padding: 0 20px 20px 20px;

@@ -2,13 +2,7 @@ library(shiny)
 library(RColorBrewer)
 library(scales)
 library(lattice)
-
-allzips <- readRDS("data/superzip.rds")
-allzips$latitude <- jitter(allzips$latitude)
-allzips$longitude <- jitter(allzips$longitude)
-allzips$college <- allzips$college * 100
-allzips$zipcode <- formatC(allzips$zipcode, width=5, format="d", flag="0")
-row.names(allzips) <- allzips$zipcode
+library(dplyr)
 
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 set.seed(100)
@@ -18,6 +12,8 @@ zipdata <- allzips[sample.int(nrow(allzips), 10000),]
 zipdata <- zipdata[order(zipdata$centile),]
 
 shinyServer(function(input, output, session) {
+  
+  ## Interactive Map ###########################################
 
   # Create the map
   map <- createLeafletMap(session, "map")
@@ -102,6 +98,21 @@ shinyServer(function(input, output, session) {
     # attempting to write to the websocket after the session is gone.
     session$onSessionEnded(paintObs$suspend)
   })
+  
+  # Show a popup at the given location
+  showZipcodePopup <- function(zipcode, lat, lng) {
+    selectedZip <- allzips[allzips$zipcode == zipcode,]
+    content <- as.character(tagList(
+      tags$h4("Score:", as.integer(selectedZip$centile)),
+      tags$strong(HTML(sprintf("%s, %s %s",
+        selectedZip$city.x, selectedZip$state.x, selectedZip$zipcode
+      ))), tags$br(),
+      sprintf("Median household income: %s", dollar(selectedZip$income * 1000)), tags$br(),
+      sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
+      sprintf("Adult population: %s", selectedZip$adultpop)
+    ))
+    map$showPopup(lat, lng, content, zipcode)
+  }
 
   # When map is clicked, show a popup with city info
   clickObs <- observe({
@@ -111,19 +122,65 @@ shinyServer(function(input, output, session) {
       return()
     
     isolate({
-      selectedZip <- zipdata[zipdata$zipcode == event$id,]
-      content <- as.character(tagList(
-        tags$h4("Score:", as.integer(selectedZip$centile)),
-        tags$strong(HTML(sprintf("%s, %s %s",
-          selectedZip$city.x, selectedZip$state.x, selectedZip$zipcode
-        ))), tags$br(),
-        sprintf("Median household income: %s", dollar(selectedZip$income * 1000)), tags$br(),
-        sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
-        sprintf("Adult population: %s", selectedZip$adultpop)
-      ))
-      map$showPopup(event$lat, event$lng, content, event$id)
+      showZipcodePopup(event$id, event$lat, event$lng)
     })
   })
   
   session$onSessionEnded(clickObs$suspend)
+  
+  
+  ## Data Explorer ###########################################
+  
+  observe({
+    cities <- if (is.null(input$states)) character(0) else {
+      filter(cleantable, State %in% input$states) %.%
+        `$`('City') %.%
+        unique() %.%
+        sort()
+    }
+    stillSelected <- isolate(input$cities[input$cities %in% cities])
+    updateSelectInput(session, "cities", choices = cities,
+      selected = stillSelected)
+  })
+  
+  observe({
+    zipcodes <- if (is.null(input$states)) character(0) else {
+      cleantable %.%
+        filter(State %in% input$states,
+          is.null(input$cities) | City %in% input$cities) %.%
+        `$`('Zipcode') %.%
+        unique() %.%
+        sort()
+    }
+    stillSelected <- isolate(input$zipcodes[input$zipcodes %in% zipcodes])
+    updateSelectInput(session, "zipcodes", choices = zipcodes,
+      selected = stillSelected)
+  })
+  
+  observe({
+    if (is.null(input$goto))
+      return()
+    isolate({
+      map$clearPopups()
+      dist <- 0.5
+      zip <- input$goto$zip
+      lat <- input$goto$lat
+      lng <- input$goto$lng
+      showZipcodePopup(zip, lat, lng)
+      map$fitBounds(lat - dist, lng - dist,
+        lat + dist, lng + dist)
+    })
+  })
+  
+  output$ziptable <- renderDataTable({
+    cleantable %.%
+      filter(
+        Score >= input$minScore,
+        Score <= input$maxScore,
+        is.null(input$states) | State %in% input$states,
+        is.null(input$cities) | City %in% input$cities,
+        is.null(input$zipcodes) | Zipcode %in% input$zipcodes
+      ) %.%
+      mutate(Action = paste('<a class="go-map" href="" data-lat="', Lat, '" data-long="', Long, '" data-zip="', Zipcode, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
+  })
 })
