@@ -1,5 +1,7 @@
 # SuperZIP demo
 
+**NOTE:** Requires Shiny 0.9.0 or later.
+
 See this demo live [here](http://jcheng.shinyapps.io/superzip/).
 
 This demo app uses [Packrat](http://rstudio.github.io/packrat/). To run this app locally:
