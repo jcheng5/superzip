@@ -4,6 +4,9 @@
 
 You can run this demo with:
 ```
+if (!require(devtools))
+  install.packages("devtools")
+devtools::install_github("jcheng5/leaflet-shiny")
 shiny::runGitHub("superzip", "jcheng5", ref="march2014")
 ```
 

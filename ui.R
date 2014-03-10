@@ -28,7 +28,7 @@ shinyUI(navbarPage("Superzip", id="nav",
         options=list(
           center = c(37.45, -93.85),
           zoom = 4,
-          maxBounds = list(list(9, -130), list(80, -38)) # Show US only
+          maxBounds = list(list(15.961329,-129.92981), list(52.908902,-56.80481)) # Show US only
         )
       ),
       
