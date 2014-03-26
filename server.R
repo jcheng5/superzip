@@ -1,4 +1,5 @@
 library(shiny)
+library(leaflet)
 library(RColorBrewer)
 library(scales)
 library(lattice)
