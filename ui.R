@@ -32,7 +32,7 @@ shinyUI(navbarPage("Superzip", id="nav",
         )
       ),
       
-      absolutePanel(id = "controls", class = "modal", fixed = TRUE, draggable = TRUE,
+      absolutePanel(id = "controls", class = "modal modal-body", fixed = TRUE, draggable = TRUE,
         top = 60, left = "auto", right = 20, bottom = "auto",
         width = 330, height = "auto",
         
