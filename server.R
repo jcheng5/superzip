@@ -134,9 +134,9 @@ shinyServer(function(input, output, session) {
   
   observe({
     cities <- if (is.null(input$states)) character(0) else {
-      filter(cleantable, State %in% input$states) %.%
-        `$`('City') %.%
-        unique() %.%
+      filter(cleantable, State %in% input$states) %>%
+        `$`('City') %>%
+        unique() %>%
         sort()
     }
     stillSelected <- isolate(input$cities[input$cities %in% cities])
@@ -146,11 +146,11 @@ shinyServer(function(input, output, session) {
   
   observe({
     zipcodes <- if (is.null(input$states)) character(0) else {
-      cleantable %.%
+      cleantable %>%
         filter(State %in% input$states,
-          is.null(input$cities) | City %in% input$cities) %.%
-        `$`('Zipcode') %.%
-        unique() %.%
+          is.null(input$cities) | City %in% input$cities) %>%
+        `$`('Zipcode') %>%
+        unique() %>%
         sort()
     }
     stillSelected <- isolate(input$zipcodes[input$zipcodes %in% zipcodes])
@@ -174,14 +174,14 @@ shinyServer(function(input, output, session) {
   })
   
   output$ziptable <- renderDataTable({
-    cleantable %.%
+    cleantable %>%
       filter(
         Score >= input$minScore,
         Score <= input$maxScore,
         is.null(input$states) | State %in% input$states,
         is.null(input$cities) | City %in% input$cities,
         is.null(input$zipcodes) | Zipcode %in% input$zipcodes
-      ) %.%
+      ) %>%
       mutate(Action = paste('<a class="go-map" href="" data-lat="', Lat, '" data-long="', Long, '" data-zip="', Zipcode, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
   })
 })

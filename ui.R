@@ -32,8 +32,8 @@ shinyUI(navbarPage("Superzip", id="nav",
         )
       ),
       
-      absolutePanel(id = "controls", class = "modal modal-body", fixed = TRUE, draggable = TRUE,
-        top = 60, left = "auto", right = 20, bottom = "auto",
+      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE, draggable = TRUE,
+        top = 70, left = "auto", right = 20, bottom = "auto",
         width = 330, height = "auto",
         
         h2("ZIP explorer"),
