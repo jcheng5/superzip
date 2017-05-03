@@ -1,3 +1,9 @@
+# This repo is deprecated
+
+You can find an updated version of this app at https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example.
+
+---
+
 # SuperZIP demo
 
 **NOTE:** Requires Shiny 0.9.0 or later.
